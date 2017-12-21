@@ -1,5 +1,5 @@
 require 'green_shoes'
-SH = 21
+SH = 23
 
 begin
   `modinfo`
@@ -7,18 +7,19 @@ rescue 'modinfo: ERROR:'
   'ERROR'
 end
 
-Shoes.app title: 'Eject', width: 550, height: 200 do
-  para 'Input device', margin: 10
+Shoes.app title: 'Devices', width: 580, height: 600 do
+  para 'Input device', margin: 15, margin_left: 220
   @line = edit_line width: 400, margin: 10
-  @item = button 'Disconnect', margin: 10
+  @item = button 'Disconnect device', margin: 10
   @linee = edit_line width: 400, margin: 10
-  @itemm = button 'Connect', margin: 10
-  @buttom = button 'Get list', margin: 10
-  @buttom.click do
-    @i = Thread.new do
-      Shoes.app title: 'Device list', width: 900, height: 500 do
+  @itemm = button 'Connect device', margin: 10
+  @button1 = button 'Get list of devices', margin: 10
+
+  @button1.click do
+
         Thread.current['tread'] = Thread.new do
-          @edit_box = edit_box width: 900, height: 500
+
+          @edit_box = edit_box width: 580, height: 450
           @uuid = Array.new(SH)
           @uuid.map! do |item|
             item = `uuidgen - create a new UUID value`
@@ -31,21 +32,24 @@ Shoes.app title: 'Eject', width: 550, height: 200 do
           @array[j] = {:name => '', :man => '', :guid => '', :device_part => '', :provider => '', :driver_name => '', :bus => '', :driver_file => ''}
           information = `lshw`
           information.split("\n").each do |item|
-            if item.include?'description'
+
+            if item.include?'описание'
               if i > 0
                 i -= 1
                 next
               end
               @array[j][:name] = item.split(': ')[1]
             end
-            if item.include?'vendor'
+
+            if item.include?'производитель'
               if i > 0
                 i -= 1
                 next
               end
               @array[j][:man] = item.split(': ')[1]
             end
-            if item.include?'bus info'
+
+            if item.include?'сведения о шине'
               if i > 0
                 i -= 1
                 next
@@ -57,7 +61,8 @@ Shoes.app title: 'Eject', width: 550, height: 200 do
               item.split(': ')[1].split('')[0..3].each { |item| @string += item }
               @array[j][:bus] = @string.delete('@')
             end
-            if item.include?'configuration'
+
+            if item.include?'конфигурация'
               item.split(' ').each do |line|
                 if line.include?'driver='
                   @array[j][:driver_name] = line.split('=')[1]
@@ -67,12 +72,15 @@ Shoes.app title: 'Eject', width: 550, height: 200 do
                 end
               end
             end
+
           end
           @array.each do |device|
+
             if device[:name] == 'DVD-RAM writer'
               device[:driver_file] = 'ERROR'
               break
             end
+
             Dir.chdir("/sys/bus//#{device[:bus]}//devices/#{device[:device_part]}")
             info = IO.read('modalias')
             Dir.chdir("/sbin")
@@ -94,7 +102,7 @@ Shoes.app title: 'Eject', width: 550, height: 200 do
             @edit_box.text += "Device # #{i}\n"
             @edit_box.text += "Name: #{item[:name]}\n"
             @edit_box.text += "Manufacturer: #{item[:man]}\n"
-            @edit_box.text += "Provider: ASUSTeK Computer Inc.\n"
+            @edit_box.text += "Provider: Advanced Micro Devices, Inc.\n"
             @edit_box.text += "Device Path: #{item[:device_part]}\n"
             @edit_box.text += "Driver Name: #{item[:driver_name]}\n"
             @edit_box.text += "Sys file: #{item[:driver_file]}\n"
@@ -102,16 +110,14 @@ Shoes.app title: 'Eject', width: 550, height: 200 do
             i += 1
           end
         end
-      end
-    end
   end
   @item.click do
-    name_device = @line.text
+    name_dev = @line.text
     @i['tread']['array'].each do |item|
-      if item[:name] == name_device
+      if item[:name] == name_dev
         @time = item[:device_part]
         Dir.chdir("/sys/bus/#{item[:bus]}/drivers/#{item[:driver_name]}")
-        `echo #{item[:device_part]} | sudo tee -a unbind`
+        `echo #{item[:device_part]} | tee -a unbind`
         break
       end
     end
@@ -122,7 +128,7 @@ Shoes.app title: 'Eject', width: 550, height: 200 do
       if item[:name] == name_device
         @time = item[:device_part]
         Dir.chdir("/sys/bus/#{item[:bus]}/drivers/#{item[:driver_name]}")
-        `echo #{@time} | sudo tee -a bind`
+        `echo #{@time} | tee -a bind`
         break
       end
     end
